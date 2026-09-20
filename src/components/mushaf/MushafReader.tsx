@@ -4,8 +4,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MushafPageView } from "./MushafPageView";
 import { PageChrome } from "./PageChrome";
-import { Starfield } from "@/components/celestial/Starfield";
 import { AuroraVeil } from "@/components/celestial/AuroraVeil";
+import { useAmbience } from "@/components/celestial/CelestialCanvas";
+import { MorphologyPanel } from "@/components/deep/MorphologyPanel";
+import { ConstellationView } from "@/components/deep/ConstellationView";
+import { SymmetryLens } from "@/components/deep/SymmetryLens";
 import { ContextPill, type PillAction } from "@/components/meta/ContextPill";
 import { NavigatorPanel } from "@/components/meta/NavigatorPanel";
 import { TranslationPanel } from "@/components/meta/TranslationPanel";
@@ -14,10 +17,15 @@ import { SettingsPanel } from "@/components/meta/SettingsPanel";
 import { MetaDock } from "@/components/meta/MetaDock";
 import {
   BookmarkIcon,
+  GrammarIcon,
   PauseIcon,
   PlayIcon,
+  SymmetryIcon,
+  ThreadIcon,
   TranslateIcon,
 } from "@/components/meta/icons";
+import { useDeepReader } from "@/lib/deep/useDeepReader";
+import { useAutoHideChrome, useSwipeNavigation } from "@/lib/utils/useSwipeNavigation";
 import {
   useGlyphFont,
   usePrefetchAdjacentFonts,
@@ -74,6 +82,15 @@ export function MushafReader({
     lineCount: page.lines.length,
   });
 
+  const ambience = useAmbience();
+  const chrome = useAutoHideChrome();
+  const verseKeys = useMemo(() => page.verses.map((v) => v.verseKey), [page.verses]);
+  const deep = useDeepReader({
+    page: page.pageNumber,
+    verseKeys,
+    enabled: hydrated && store.deepLayers,
+  });
+
   /**
    * The store rehydrates from localStorage after the first paint. Until it
    * has, render the server's preferences so the markup matches and the
@@ -118,10 +135,20 @@ export function MushafReader({
   const turn = useCallback(
     (delta: 1 | -1) => {
       recitation.stop();
+      // The sky is pushed by the turn, and the chrome comes back for it.
+      ambience.noteActivity(delta * 0.6);
+      chrome.wake();
       store.goToPage(page.pageNumber + delta);
     },
-    [page.pageNumber, recitation, store],
+    [ambience, chrome, page.pageNumber, recitation, store],
   );
+
+  useSwipeNavigation(frameRef, cardRef, {
+    onTurn: turn,
+    canGoNext: page.pageNumber < LAST_PAGE,
+    canGoPrevious: page.pageNumber > 1,
+    enabled: store.panel === null && deep.overlay === "none",
+  });
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -142,14 +169,11 @@ export function MushafReader({
     (word: MushafWord, element: HTMLElement) => {
       if (word.charType === "end") return;
       const box = element.getBoundingClientRect();
-      store.setAnchor({
-        verseKey: word.verseKey,
-        wordId: word.id,
-        x: box.left + box.width / 2,
-        y: box.bottom,
-      });
+      const x = box.left + box.width / 2;
+      deep.touchWord(word.verseKey, word.position, x, box.top + box.height / 2);
+      store.setAnchor({ verseKey: word.verseKey, wordId: word.id, x, y: box.bottom });
     },
-    [store],
+    [deep, store],
   );
 
   const anchorVerse = store.anchor?.verseKey ?? null;
@@ -173,6 +197,20 @@ export function MushafReader({
         onSelect: () => store.openPanel("translation"),
       },
       {
+        id: "grammar",
+        label: "Grammar",
+        icon: <GrammarIcon />,
+        active: deep.overlay === "morphology",
+        onSelect: () => deep.openMorphology(),
+      },
+      {
+        id: "trace",
+        label: "Trace related verses",
+        icon: <ThreadIcon />,
+        active: deep.overlay === "constellation",
+        onSelect: () => void deep.trace(anchorVerse),
+      },
+      {
         id: "bookmark",
         label: bookmarked ? "Remove bookmark" : "Bookmark",
         icon: <BookmarkIcon filled={bookmarked} />,
@@ -189,7 +227,7 @@ export function MushafReader({
         },
       },
     ];
-  }, [anchorVerse, bookmarked, chapterMap, page.pageNumber, recitation, store]);
+  }, [anchorVerse, bookmarked, chapterMap, deep, page.pageNumber, recitation, store]);
 
   /**
    * Reading pace nudges the warmth of the halo: a reader who lingers gets a
@@ -207,13 +245,14 @@ export function MushafReader({
     };
   }, [page.pageNumber]);
 
-  const ambience = hydrated ? store.ambience : true;
+  const ambienceOn = hydrated ? store.ambience : true;
   const scale = hydrated ? store.glyphScale : 1;
 
   return (
     <div className="relative flex h-dvh w-full flex-col overflow-hidden">
-      <AuroraVeil enabled={ambience} />
-      <Starfield enabled={ambience} />
+      {/* The CSS aurora is the floor: it is what a device without WebGL2,
+          or a reader who asked for less motion, still sees. */}
+      <AuroraVeil enabled={ambienceOn && !ambience.active} />
 
       <main className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-[3.5vw] py-[2.5vh] sm:px-[6vw]">
         {/* The frame is the space the page may occupy; the page sizes itself
@@ -270,6 +309,9 @@ export function MushafReader({
       </main>
 
       <MetaDock
+        visible={chrome.visible || store.panel !== null}
+        onSymmetry={() => deep.openSymmetry(deep.currentSurah)}
+        symmetryActive={deep.overlay === "symmetry"}
         page={page.pageNumber}
         lastPage={LAST_PAGE}
         onTurn={turn}
@@ -326,6 +368,45 @@ export function MushafReader({
         }
       />
 
+      <MorphologyPanel
+        word={deep.overlay === "morphology" ? (deep.focusWord?.word ?? null) : null}
+        verseKey={deep.focusWord?.verseKey ?? ""}
+        gloss={deep.atlas.gloss}
+        onExploreRoot={(root) =>
+          void deep.traceRoot(root, deep.focusWord?.verseKey ?? anchorVerse ?? "")
+        }
+        onDismiss={() => deep.setOverlay("none")}
+      />
+
+      <ConstellationView
+        open={deep.overlay === "constellation"}
+        origin={deep.linksFor}
+        originLabel={deep.linksFor}
+        links={deep.links}
+        loading={deep.tracing}
+        gloss={(root) => deep.atlas.gloss(root)}
+        onOpenVerse={(target) => {
+          deep.setOverlay("none");
+          store.goToPage(target);
+        }}
+        onClose={() => deep.setOverlay("none")}
+      />
+
+      <SymmetryLens
+        open={deep.overlay === "symmetry"}
+        surahId={deep.currentSurah}
+        surahName={chapterMap.get(deep.currentSurah)?.nameSimple ?? ""}
+        symmetry={deep.layers.symmetry[String(deep.currentSurah)] ?? null}
+        verseToPage={(verseKey) =>
+          chapterMap.get(Number(verseKey.split(":")[0]))?.pages[0] ?? page.pageNumber
+        }
+        onOpenVerse={(target) => {
+          deep.setOverlay("none");
+          store.goToPage(target);
+        }}
+        onClose={() => deep.setOverlay("none")}
+      />
+
       <SettingsPanel
         open={store.panel === "settings"}
         onClose={() => store.openPanel(null)}
@@ -334,14 +415,24 @@ export function MushafReader({
         translationId={store.translationId}
         reciterId={store.reciterId}
         glyphScale={scale}
-        ambience={ambience}
+        ambience={ambienceOn}
         unicodeMode={store.unicodeMode}
+        deepLayers={store.deepLayers}
+        ledgerAvailable={deep.ledger.available}
+        ledgerEvents={deep.ledger.insights.events}
+        lexicalPrism={deep.ledger.insights.lexicalPrism}
+        tempo={deep.ledger.insights.tempo}
+        resonance={deep.resonance}
+        onForget={() => void deep.ledger.forget()}
+        onOpenVerse={(target) => store.goToPage(target)}
+        gloss={deep.atlas.gloss}
         onChange={{
           translationId: (v) => store.setPreference("translationId", v),
           reciterId: (v) => store.setPreference("reciterId", v),
           glyphScale: (v) => store.setPreference("glyphScale", v),
           ambience: (v) => store.setPreference("ambience", v),
           unicodeMode: (v) => store.setPreference("unicodeMode", v),
+          deepLayers: (v) => store.setPreference("deepLayers", v),
         }}
       />
     </div>

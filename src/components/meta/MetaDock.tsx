@@ -7,6 +7,7 @@ import {
   PauseIcon,
   PlayIcon,
   SettingsIcon,
+  SymmetryIcon,
   TranslateIcon,
 } from "./icons";
 import type { PanelId } from "@/lib/store/reader";
@@ -20,6 +21,9 @@ import type { PanelId } from "@/lib/store/reader";
  * for attention while the reader is reading.
  */
 export function MetaDock({
+  visible,
+  onSymmetry,
+  symmetryActive,
   page,
   lastPage,
   onTurn,
@@ -30,6 +34,10 @@ export function MetaDock({
   onPlayPage,
   canPlay,
 }: {
+  /** The dock withdraws while the reader is reading and returns on touch. */
+  visible: boolean;
+  onSymmetry: () => void;
+  symmetryActive: boolean;
   page: number;
   lastPage: number;
   onTurn: (delta: 1 | -1) => void;
@@ -41,8 +49,20 @@ export function MetaDock({
   canPlay: boolean;
 }) {
   return (
-    <div className="relative z-20 flex justify-center px-4 pb-4">
-      <div className="glass group flex items-center gap-1 px-2 py-1.5 opacity-70 transition-opacity duration-500 hover:opacity-100 focus-within:opacity-100">
+    <div
+      data-no-swipe
+      className="pointer-events-none relative z-20 flex justify-center px-3"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+    >
+      <div
+        className="glass pointer-events-auto flex max-w-full items-center gap-0.5 overflow-x-auto px-1.5 py-1.5 transition-[opacity,transform] duration-500 focus-within:opacity-100 sm:gap-1 sm:px-2"
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible ? "translateY(0)" : "translateY(0.9rem)",
+          // Hidden chrome must not be reachable by touch or by tab.
+          visibility: visible ? "visible" : "hidden",
+        }}
+      >
         <DockButton
           label="Previous page"
           onClick={() => onTurn(-1)}
@@ -113,6 +133,14 @@ export function MetaDock({
         </DockButton>
 
         <DockButton
+          label="Structure"
+          onClick={onSymmetry}
+          active={symmetryActive}
+        >
+          <SymmetryIcon />
+        </DockButton>
+
+        <DockButton
           label="Settings"
           onClick={() => onPanel("settings")}
           active={activePanel === "settings"}
@@ -145,7 +173,7 @@ function DockButton({
       title={label}
       aria-label={label}
       aria-pressed={active}
-      className={`grid size-9 place-items-center rounded-lg transition-colors duration-200 disabled:pointer-events-none disabled:opacity-25 ${
+      className={`grid size-10 shrink-0 place-items-center rounded-lg sm:size-9 transition-colors duration-200 disabled:pointer-events-none disabled:opacity-25 ${
         active
           ? "bg-gold-400/20 text-gold-100"
           : "text-gold-200/70 hover:bg-gold-400/12 hover:text-gold-100"

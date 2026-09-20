@@ -62,6 +62,8 @@ interface ReaderState {
   /** Multiplier on the computed glyph size, 0.85–1.3. */
   glyphScale: number;
   ambience: boolean;
+  /** Master switch for morphology, constellations, symmetry and the ledger. */
+  deepLayers: boolean;
   unicodeMode: boolean;
   setPreference: <K extends keyof ReaderPreferences>(
     key: K,
@@ -80,6 +82,7 @@ type ReaderPreferences = Pick<
   | "reciterId"
   | "glyphScale"
   | "ambience"
+  | "deepLayers"
   | "unicodeMode"
 >;
 
@@ -125,6 +128,7 @@ export const useReader = create<ReaderState>()(
       reciterId: DEFAULT_RECITER,
       glyphScale: 1,
       ambience: true,
+      deepLayers: true,
           unicodeMode: false,
       setPreference: (key, value) => set({ [key]: value } as never),
 
@@ -157,6 +161,7 @@ export const useReader = create<ReaderState>()(
         reciterId: s.reciterId,
         glyphScale: s.glyphScale,
         ambience: s.ambience,
+        deepLayers: s.deepLayers,
         unicodeMode: s.unicodeMode,
         bookmarks: s.bookmarks,
       }),

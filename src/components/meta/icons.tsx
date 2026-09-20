@@ -72,3 +72,35 @@ export const NoteIcon = () => (
     <path d="M5.25 4.75h13.5v11l-4 4.5h-9.5v-15.5ZM18.25 15.5h-4v4.5" />
   </svg>
 );
+
+export const GrammarIcon = () => (
+  <svg {...base} aria-hidden="true">
+    <path d="M4 18.5 9.5 5.5l5.5 13M6 14.5h7" />
+    <path d="M17.5 12.5v6M17.5 18.5c1.8 0 3-1.1 3-2.6s-1.2-2.6-3-2.6" opacity=".7" />
+  </svg>
+);
+
+export const ThreadIcon = () => (
+  <svg {...base} aria-hidden="true">
+    <circle cx="12" cy="12" r="2.1" />
+    <circle cx="5" cy="6" r="1.5" />
+    <circle cx="19.5" cy="7.5" r="1.5" />
+    <circle cx="6.5" cy="19" r="1.5" />
+    <circle cx="18.5" cy="17.5" r="1.5" />
+    <path d="M10.4 10.6 6.2 7.2M13.7 11.2l4.3-2.6M10.7 13.4l-3.2 4.3M13.6 13.3l3.7 3.2" opacity=".65" />
+  </svg>
+);
+
+export const SymmetryIcon = () => (
+  <svg {...base} aria-hidden="true">
+    <path d="M12 3.5v17" opacity=".55" strokeDasharray="2 2.4" />
+    <path d="M9 7.5H4.5v9H9M15 7.5h4.5v9H15" />
+  </svg>
+);
+
+export const ShieldIcon = () => (
+  <svg {...base} aria-hidden="true">
+    <path d="M12 3.2 5 6v5.6c0 4 2.9 7.5 7 9.2 4.1-1.7 7-5.2 7-9.2V6l-7-2.8Z" />
+    <path d="m9.2 12.2 2 2 3.6-3.9" opacity=".75" />
+  </svg>
+);

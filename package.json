@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "bake:layout": "node scripts/bake-layout.mjs"
+    "bake:layout": "node scripts/bake-layout.mjs",
+    "bake:corpus": "node scripts/bake-corpus.mjs"
   },
   "dependencies": {
     "motion": "^13.4.0",
