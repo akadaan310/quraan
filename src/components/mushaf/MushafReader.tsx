@@ -92,6 +92,12 @@ export function MushafReader({
     enabled: hydrated && store.deepLayers,
   });
 
+  /** Recency-weighted root lookup counts, for the personal-familiarity accent. */
+  const familiarity = useMemo(
+    () => new Map(deep.ledger.insights.lexicalPrism.map((e) => [e.root, e.count])),
+    [deep.ledger.insights.lexicalPrism],
+  );
+
   /**
    * The store rehydrates from localStorage after the first paint. Until it
    * has, render the server's preferences so the markup matches and the
@@ -380,6 +386,7 @@ export function MushafReader({
         word={deep.overlay === "morphology" ? (deep.focusWord?.word ?? null) : null}
         verseKey={deep.focusWord?.verseKey ?? ""}
         gloss={deep.atlas.gloss}
+        familiarity={familiarity}
         onExploreRoot={(root) =>
           void deep.traceRoot(root, deep.focusWord?.verseKey ?? anchorVerse ?? "")
         }

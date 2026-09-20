@@ -1,7 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useState } from "react";
 import { describeAgreement, VERB_FORM_NUMERALS } from "@/lib/deep/unpack";
+import { waznFor } from "@/lib/deep/wazn";
+import { conjugate, isSoundRoot } from "@/lib/deep/conjugate";
 import type { Segment, WordMorphology } from "@/lib/deep/types";
 
 /**
@@ -38,16 +41,37 @@ const CASE_ROLE: Record<string, { role: string; hint: string; tone: string }> = 
   },
 };
 
+/**
+ * What each particle's presence does to a clause's logic — the honest scope
+ * of rhetorical (balāghah) marking this panel offers: the corpus tags these
+ * roles explicitly, so naming their force is a fact about the tagging, not a
+ * detected figure of speech. Word-order inversion, ellipsis and the rest of
+ * classical balāghah are not claimed here.
+ */
+const PARTICLE_FORCE: Record<string, { label: string; force: string }> = {
+  negation: { label: "Negation", force: "denies the clause that follows" },
+  emphasis: { label: "Emphasis", force: "intensifies the assertion that follows" },
+  resumptive: {
+    label: "Resumptive",
+    force: "opens a new clause, not grammatically bound to what precedes",
+  },
+  relative: { label: "Relative", force: "introduces a clause describing what precedes" },
+  conjunction: { label: "Conjunction", force: "joins this to what precedes, level in force" },
+};
+
 export function MorphologyPanel({
   word,
   verseKey,
   gloss,
+  /** Recency-weighted root lookup counts from the reader's own ledger. */
+  familiarity,
   onExploreRoot,
   onDismiss,
 }: {
   word: WordMorphology | null;
   verseKey: string;
   gloss: (root: string) => string | undefined;
+  familiarity?: Map<string, number>;
   onExploreRoot: (root: string) => void;
   onDismiss: () => void;
 }) {
@@ -102,6 +126,7 @@ export function MorphologyPanel({
                   <SegmentRow
                     segment={segment}
                     gloss={segment.root ? gloss(segment.root) : undefined}
+                    familiarity={segment.root ? familiarity?.get(segment.root) : undefined}
                     onExploreRoot={onExploreRoot}
                   />
                 </li>
@@ -174,14 +199,22 @@ function SegmentArcs({ segments }: { segments: Segment[] }) {
 function SegmentRow({
   segment,
   gloss,
+  familiarity,
   onExploreRoot,
 }: {
   segment: Segment;
   gloss?: string;
+  /** Recency-weighted lookups of this root, from the reader's own ledger. */
+  familiarity?: number;
   onExploreRoot: (root: string) => void;
 }) {
   const role = segment.grammaticalCase ? CASE_ROLE[segment.grammaticalCase] : null;
   const agreement = describeAgreement(segment.agreement);
+  const wazn = waznFor(segment);
+  const particleForce = PARTICLE_FORCE[segment.tags[0]] ?? null;
+  // Unlooked-up roots (familiarity undefined) get the full pedagogical
+  // accent; it fades toward nothing as lookups accumulate.
+  const unfamiliar = segment.root ? Math.max(0, 1 - (familiarity ?? 0) / 6) : 0;
 
   const facts = [
     segment.lemma && { label: "Lemma", value: segment.lemma, arabic: true },
@@ -194,11 +227,18 @@ function SegmentRow({
     !segment.verbForm && segment.aspect && { label: "Aspect", value: segment.aspect },
     segment.mood && { label: "Mood", value: segment.mood },
     agreement && { label: "Agreement", value: agreement },
+    wazn && { label: "Measure · وزن", value: `${wazn.template} · ${wazn.translit}`, arabic: true },
     segment.tags.length > 0 && { label: "Tags", value: segment.tags.join(", ") },
   ].filter(Boolean) as { label: string; value: string; arabic?: boolean }[];
 
   return (
-    <div className="rounded-lg border border-gold-400/12 px-3 py-2.5">
+    <div
+      className="rounded-lg border px-3 py-2.5 transition-colors"
+      style={{
+        borderColor:
+          unfamiliar > 0.05 ? `rgb(212 172 78 / ${0.12 + unfamiliar * 0.28})` : "rgb(212 172 78 / 0.12)",
+      }}
+    >
       <div className="flex items-baseline justify-between gap-2">
         <span
           lang="ar"
@@ -247,6 +287,13 @@ function SegmentRow({
         </p>
       )}
 
+      {particleForce && (
+        <p className="mt-2 text-[0.68rem] leading-snug">
+          <span className="text-gold-200/85">{particleForce.label}</span>
+          <span className="text-gold-300/45"> — {particleForce.force}</span>
+        </p>
+      )}
+
       {facts.length > 0 && (
         <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
           {facts.map((fact) => (
@@ -266,6 +313,78 @@ function SegmentRow({
           ))}
         </dl>
       )}
+
+      {segment.pos === "verbal" && segment.root && isSoundRoot(segment.root) && (
+        <ConjugationDisclosure root={segment.root} form={segment.verbForm ?? 1} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * The full paradigm is a lot of text for a panel this narrow, so it stays
+ * collapsed until asked for — most taps want the one form in front of them,
+ * not all thirteen persons of it.
+ */
+function ConjugationDisclosure({ root, form }: { root: string; form: number }) {
+  const [open, setOpen] = useState(false);
+  const result = open ? conjugate(root, form) : null;
+
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="text-[0.62rem] tracking-[0.12em] text-gold-300/55 uppercase underline decoration-gold-400/25 underline-offset-4 hover:text-gold-200"
+      >
+        {open ? "Hide full conjugation" : "Show full conjugation"}
+      </button>
+
+      {result && result.supported && (
+        <div className="mt-2 grid grid-cols-2 gap-3">
+          <ConjugationColumn title="Perfect · الماضي" forms={result.perfect} />
+          <ConjugationColumn title="Imperfect · المضارع" forms={result.imperfect} />
+          {result.notes.length > 0 && (
+            <p className="col-span-2 text-[0.62rem] leading-relaxed text-gold-300/40">
+              {result.notes.join(" ")}
+            </p>
+          )}
+        </div>
+      )}
+      {result && !result.supported && (
+        <p className="mt-2 text-[0.62rem] leading-relaxed text-gold-300/40">
+          {result.reason}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ConjugationColumn({
+  title,
+  forms,
+}: {
+  title: string;
+  forms: { person: string; label: string; word: string }[];
+}) {
+  return (
+    <div>
+      <p className="text-[0.56rem] tracking-[0.1em] text-gold-300/40 uppercase">{title}</p>
+      <ul className="mt-1 space-y-0.5">
+        {forms.map((f) => (
+          <li key={f.person} className="flex items-baseline justify-between gap-2">
+            <span className="text-[0.6rem] text-gold-300/45">{f.label}</span>
+            <span
+              lang="ar"
+              dir="rtl"
+              className="text-[0.78rem] text-ink"
+              style={{ fontFamily: '"UthmanicHafs", serif' }}
+            >
+              {f.word}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
