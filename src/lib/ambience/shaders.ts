@@ -160,7 +160,11 @@ void main() {
 }`;
 
 export const STAR_FRAGMENT = `#version 300 es
-precision mediump float;
+// highp to match STAR_VERTEX: uTime, uResolution and uCalm are uniforms
+// shared with that stage, and GLSL ES requires a program's stages to agree
+// on a shared uniform's precision. WebGL2 guarantees highp float support in
+// fragment shaders, so this is safe unconditionally.
+precision highp float;
 
 in float vAlpha;
 in float vWarm;

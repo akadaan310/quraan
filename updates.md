@@ -22,19 +22,13 @@ Branch: `claude/celestial-mushaf-reader-ui-nbxyn1`
 | Morphology ↔ reader alignment | 107 verses sampled across the Muṣḥaf, **0 mismatches** |
 | Embedding quality | Spot-checked; see "Why the embeddings are trustworthy" below |
 | Typecheck and production build | Both clean |
+| `CelestialCanvas` mounted and rendering | See "CelestialCanvas is now mounted" below |
 
 ### Written, typechecked, **never executed**
 
 Nothing below has been run in a browser even once. Treat all of it as
 unverified code.
 
-- **`CelestialCanvas` is not mounted anywhere.** Only `useAmbience()` is
-  imported, so it resolves to the no-op default context. Consequence: no WebGL
-  background, no touch ripples, no contemplation breathing. The app correctly
-  falls back to the CSS `AuroraVeil`, which is why the mobile check was clean —
-  it never exercised the engine. **This is the single highest-value next step.**
-- The whole WebGL engine (`src/lib/ambience/`) — shaders have never been
-  compiled by a driver. Expect GLSL errors on first run.
 - Swipe navigation (`useSwipeNavigation`) — never touched with a real finger.
 - The encrypted ledger (`src/lib/ledger/`) — never opened an IndexedDB.
 - The semantic worker (`src/workers/semantic.worker.ts`) — never spawned.
@@ -51,6 +45,62 @@ unverified code.
   shell has not been audited for notches.
 - `src/components/celestial/Starfield.tsx` is now **orphaned** — no importers.
   Delete it once `CelestialCanvas` is proven, or restore it as the fallback.
+
+---
+
+## `CelestialCanvas` is now mounted
+
+Mounted in `src/app/read/ReaderShell.tsx`, wrapping every branch (loading
+veil, error state, and `MushafReader`) rather than just the reader, so the sky
+persists across page-load transitions. Gated reactively on the `ambience`
+store preference (`useReader((s) => s.ambience)`), so toggling it in Settings
+mounts/disposes the engine live.
+
+First run threw immediately on link:
+
+```
+shader link failed: Precisions of uniform 'uCalm' differ between VERTEX and FRAGMENT shaders.
+```
+
+and then the same for `uTime`. Cause: `STAR_VERTEX` declares `precision highp
+float` (its file-wide default) while `STAR_FRAGMENT` declares `precision
+mediump float`, and both reference `uCalm`, `uTime`, `uResolution` — GLSL ES
+requires a uniform shared across a linked program's stages to agree on
+precision. Fixed by raising `STAR_FRAGMENT`'s precision to `highp` (WebGL2
+guarantees highp float support in fragment shaders, so this is safe
+unconditionally) rather than lowering the vertex shader, since the vertex math
+wraps `uTime`-derived offsets through `fract()` every frame and `mediump`'s
+~10-bit mantissa would have shown up as mote jitter within minutes of a
+reading session.
+
+Also added dev-only (`NODE_ENV !== "production"`) logging to the engine's
+init `catch`, which previously swallowed failures — including these two —
+completely silently. That silence is exactly why the bugs shipped unnoticed
+in the first place.
+
+Verified in headless Chromium (`/opt/pw-browsers/chromium`, `--use-gl=
+swiftshader`) at a 390×844 viewport against `/read`:
+
+- WebGL2 context created, live, not lost.
+- Canvas sized to the real viewport (was defaulting to 300×150 while the
+  engine failed to construct).
+- ~61 frames rendered over 1s of `requestAnimationFrame` (headless/software
+  rasterizer — **not** a real-device measurement; mobile GPU perf is still
+  unverified).
+- Sampled framebuffer pixel changed frame-to-frame near the halo region,
+  confirming actual animation rather than a cleared canvas.
+- `AuroraVeil`'s two CSS bloom layers (`veil-breathe`) correctly stop
+  rendering once the engine is active — `MushafReader`'s existing
+  `enabled={ambienceOn && !ambience.active}` guard was already correct, it
+  just had nothing driving `ambience.active` to `true` before now.
+- Zero console errors other than font-CDN TLS failures from this sandbox's
+  network proxy (`static.qurancdn.com`, unrelated to this change — the app's
+  existing `local()` probe / Unicode-fallback path handles that gracefully).
+
+`npm run typecheck` and `npm run build` both clean after the fix.
+
+Not yet exercised: ripples on real touch input, `prefers-reduced-motion` /
+Data Saver code paths, and battery/thermal behavior on an actual phone.
 
 ---
 
@@ -173,10 +223,10 @@ suspiciously high strong count would have meant the baseline was broken.
 
 ## Next steps, in order
 
-1. **Mount `CelestialCanvas`** in `src/app/read/ReaderShell.tsx`, wrapping
-   `MushafReader` (the provider must be an ancestor of the `useAmbience()`
-   call). Gate on `useReader.getState().ambience`. Then run it and fix the
-   GLSL — first-run shader compile errors are near-certain.
+1. ~~**Mount `CelestialCanvas`**~~ — done. Mounted in `ReaderShell.tsx`, two
+   GLSL precision bugs fixed, verified live in headless Chromium. See
+   "`CelestialCanvas` is now mounted" above. Still unverified: real touch
+   ripples, `prefers-reduced-motion`/Data Saver paths, real-device perf.
 2. **Exercise the deep layers in a browser.** Tap a word → grammar panel;
    tap Trace → constellation; dock → symmetry lens. Verify the worker spawns
    under `next build` and not just `next dev`.

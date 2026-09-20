@@ -76,8 +76,14 @@ export function CelestialCanvas({
     let engine: AmbienceEngine;
     try {
       engine = new AmbienceEngine(canvas, ambienceProfile());
-    } catch {
-      // No WebGL2: the CSS aurora underneath is the whole fallback.
+    } catch (err) {
+      // No WebGL2 (or a shader failed to compile/link): the CSS aurora
+      // underneath is the whole fallback. Logged in dev only — this failure
+      // mode is otherwise silent, which is how the initial GLSL precision
+      // bugs shipped unnoticed.
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[CelestialCanvas] engine init failed", err);
+      }
       return;
     }
 

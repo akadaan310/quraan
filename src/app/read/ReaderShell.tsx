@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MushafReader } from "@/components/mushaf/MushafReader";
+import { CelestialCanvas } from "@/components/celestial/CelestialCanvas";
 import { useReader } from "@/lib/store/reader";
 import { LAST_PAGE } from "@/lib/quran/layout";
 import type { MushafPage, Reciter, Surah } from "@/lib/quran/types";
@@ -30,6 +31,7 @@ export function ReaderShell({
   reciters,
 }: Props) {
   const page = useReader((s) => s.page);
+  const ambienceEnabled = useReader((s) => s.ambience);
   const [current, setCurrent] = useState<MushafPage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const cache = useRef(new Map<number, MushafPage>());
@@ -87,8 +89,9 @@ export function ReaderShell({
     };
   }, [current, page]);
 
+  let content: React.ReactNode;
   if (error && !current) {
-    return (
+    content = (
       <div className="grid h-dvh place-items-center px-6 text-center">
         <div>
           <p className="text-sm text-gold-200/80">{error}</p>
@@ -102,19 +105,23 @@ export function ReaderShell({
         </div>
       </div>
     );
+  } else if (!current) {
+    content = <OpeningVeil />;
+  } else {
+    content = (
+      <MushafReader
+        page={current}
+        chapters={chapters}
+        juzStarts={juzStarts}
+        translations={translations}
+        reciters={reciters}
+      />
+    );
   }
 
-  if (!current) return <OpeningVeil />;
-
-  return (
-    <MushafReader
-      page={current}
-      chapters={chapters}
-      juzStarts={juzStarts}
-      translations={translations}
-      reciters={reciters}
-    />
-  );
+  // The provider is mounted here, above every branch, so the sky persists
+  // across loading and error states rather than blinking out on each turn.
+  return <CelestialCanvas enabled={ambienceEnabled}>{content}</CelestialCanvas>;
 }
 
 async function loadPage(page: number, cache: Map<number, MushafPage>) {
