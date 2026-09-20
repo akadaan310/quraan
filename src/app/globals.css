@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * Celestial design tokens
+ *
+ * Two families: obsidian (the void the page floats in) and gold (every
+ * ornament, rule and highlight). Nothing else gets a colour — restraint is
+ * what keeps the script the brightest thing on screen.
+ * ------------------------------------------------------------------ */
+@theme {
+  --color-void: #05060c;
+  --color-obsidian: #0a0d18;
+  --color-slate-deep: #121729;
+  --color-slate-veil: #1a2036;
+  --color-nebula: #252d4a;
+
+  --color-gold-100: #fdf3d7;
+  --color-gold-200: #f5e0a8;
+  --color-gold-300: #e8c977;
+  --color-gold-400: #d4ac4e;
+  --color-gold-500: #b8893a;
+  --color-gold-600: #8d6428;
+
+  --color-parchment: #f3e6c8;
+  --color-ink: #f7efdc;
+
+  --font-ui: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-ethereal: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root {
+  color-scheme: dark;
+
+  /* Reading surface warmth — tuned live by the ambience engine. */
+  --halo-warmth: 0.55;
+  --halo-reach: 62%;
+  --star-opacity: 0.7;
+
+  /* Muṣḥaf metrics, resolved per viewport by the page shell. */
+  --glyph-size: 28px;
+  --line-height: 1.86;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-void);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  overflow: hidden;
+  overscroll-behavior: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ------------------------------------------------------------------ *
+ * The Muṣḥaf line
+ *
+ * Fidelity to the printed page comes down to one rule: every line spans the
+ * full measure, with the slack distributed between words rather than added to
+ * the end. `justify` alone ignores the final line of a block, so each line is
+ * its own flex row and the browser is told to stretch it explicitly.
+ * ------------------------------------------------------------------ */
+.mushaf-line {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  direction: rtl;
+  width: 100%;
+  font-size: var(--glyph-size);
+  line-height: var(--line-height);
+  /* Glyph-code fonts carry no kerning or shaping; asking for either costs
+     layout time and can only do harm. */
+  font-kerning: none;
+  font-variant-ligatures: none;
+  white-space: nowrap;
+}
+
+.mushaf-line[data-centered="true"] {
+  justify-content: center;
+  gap: 0.28em;
+}
+
+/* Words are the interaction target and want a little room around their
+   highlight — but inline padding would widen every line and push it past the
+   measure, so the highlight is grown with a box-shadow spread instead, which
+   paints outside the box without occupying any layout width. */
+.mushaf-word {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  border-radius: 0.24em;
+  padding: 0;
+  transition:
+    color 220ms var(--ease-ethereal),
+    text-shadow 220ms var(--ease-ethereal),
+    background-color 220ms var(--ease-ethereal),
+    box-shadow 220ms var(--ease-ethereal);
+  color: var(--color-ink);
+}
+
+.mushaf-word[data-kind="end"] {
+  color: var(--color-gold-300);
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .mushaf-word:not([data-kind="end"]):hover {
+    color: var(--color-gold-200);
+    text-shadow: 0 0 18px rgb(232 201 119 / 0.45);
+  }
+}
+
+/* The line must never be forced wider than the measure by its own content. */
+.mushaf-line > * {
+  flex: 0 0 auto;
+}
+
+/* The verse the reader has summoned, and the word the reciter is on. */
+.mushaf-word[data-active-verse="true"] {
+  background-color: rgb(212 172 78 / 0.09);
+  box-shadow: 0 0 0 0.1em rgb(212 172 78 / 0.09);
+  color: var(--color-gold-100);
+}
+
+.mushaf-word[data-active-word="true"] {
+  color: var(--color-gold-100);
+  background-color: rgb(232 201 119 / 0.2);
+  box-shadow: 0 0 0 0.12em rgb(232 201 119 / 0.2);
+  text-shadow: 0 0 26px rgb(245 224 168 / 0.75);
+}
+
+.surah-name-glyph {
+  font-family: "sura_names", serif;
+  font-feature-settings: "liga" 1;
+  /* The ligature IS the rendering; without it the digits would show. */
+  font-variant-ligatures: common-ligatures;
+  line-height: 1;
+}
+
+/* ------------------------------------------------------------------ *
+ * Glass surfaces
+ *
+ * A hairline gold rim is drawn with a masked gradient border rather than a
+ * flat `border-color`, so the light appears to fall across the edge.
+ * ------------------------------------------------------------------ */
+.glass {
+  position: relative;
+  background: linear-gradient(
+    160deg,
+    rgb(26 32 54 / 0.72),
+    rgb(10 13 24 / 0.82)
+  );
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-radius: 1rem;
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    150deg,
+    rgb(245 224 168 / 0.5),
+    rgb(212 172 78 / 0.14) 35%,
+    rgb(141 100 40 / 0.06) 60%,
+    rgb(232 201 119 / 0.32)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.gold-rule {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(212 172 78 / 0.45) 22%,
+    rgb(245 224 168 / 0.72) 50%,
+    rgb(212 172 78 / 0.45) 78%,
+    transparent
+  );
+}
+
+/* Screen-reader-only: the glyph fonts are private-use codepoints and carry no
+   semantic text, so every rendered line also ships real Uthmani text here. */
+.sr-only-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+::selection {
+  background: rgb(212 172 78 / 0.3);
+  color: var(--color-gold-100);
+}
+
+/* Scrollbars inside floating panels only — the reading canvas never scrolls. */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(212 172 78 / 0.3) transparent;
+}
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: rgb(212 172 78 / 0.3);
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
