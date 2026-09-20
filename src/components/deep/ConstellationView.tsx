@@ -2,7 +2,9 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
+import { juzForPage } from "@/lib/quran/layout";
 import type { Constellation } from "@/lib/deep/types";
+import type { Surah } from "@/lib/quran/types";
 
 /**
  * The thematic constellation.
@@ -23,6 +25,7 @@ export function ConstellationView({
   onOpenVerse,
   onClose,
   gloss,
+  chapters,
 }: {
   open: boolean;
   origin: string;
@@ -32,6 +35,8 @@ export function ConstellationView({
   onOpenVerse: (page: number, verseKey: string) => void;
   onClose: () => void;
   gloss: (root: string) => string | undefined;
+  /** For the Meccan/Medinan · juzʾ badge on each link — omit to hide it. */
+  chapters?: Map<number, Surah>;
 }) {
   const nodes = useMemo(() => layout(links), [links]);
 
@@ -153,6 +158,11 @@ export function ConstellationView({
                           <span className="ml-2 text-[0.64rem] text-gold-300/45">
                             page {link.page}
                           </span>
+                          {chapters && (
+                            <span className="ml-2 text-[0.64rem] text-gold-300/40">
+                              {chronologyBadge(link, chapters)}
+                            </span>
+                          )}
                         </span>
                         {link.sharedRoots.length > 0 ? (
                           <span className="mt-0.5 block truncate text-[0.68rem] text-gold-300/60">
@@ -181,6 +191,20 @@ export function ConstellationView({
       )}
     </AnimatePresence>
   );
+}
+
+/**
+ * Meccan/Medinan and juzʾ, so a thread that crosses either is visible rather
+ * than implied. Both are real, already-sourced fields — `revelationPlace`
+ * from the chapter catalogue, juzʾ from the printed edition's own juzʾ-start
+ * pages — not a new inference.
+ */
+function chronologyBadge(link: Constellation, chapters: Map<number, Surah>): string {
+  const surahId = Number(link.verseKey.split(":")[0]);
+  const place = chapters.get(surahId)?.revelationPlace;
+  const juz = juzForPage(link.page);
+  const placeLabel = place === "makkah" ? "Makkah" : place === "madinah" ? "Madīnah" : null;
+  return placeLabel ? `· ${placeLabel} · juzʾ ${juz}` : `· juzʾ ${juz}`;
 }
 
 /** Place links on a ring, nearest verses closest to the centre. */

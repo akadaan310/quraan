@@ -165,6 +165,7 @@ export async function fetchChapters(): Promise<Surah[]> {
       name_simple: string;
       name_arabic: string;
       revelation_place: "makkah" | "madinah";
+      revelation_order: number;
       verses_count: number;
       bismillah_pre: boolean;
       pages: [number, number];
@@ -178,6 +179,7 @@ export async function fetchChapters(): Promise<Surah[]> {
     nameArabic: c.name_arabic,
     translatedName: c.translated_name.name,
     revelationPlace: c.revelation_place,
+    revelationOrder: c.revelation_order,
     versesCount: c.verses_count,
     bismillahPre: c.bismillah_pre,
     pages: c.pages,

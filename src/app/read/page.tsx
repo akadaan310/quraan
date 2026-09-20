@@ -4,6 +4,7 @@ import {
   fetchReciters,
   fetchTranslationsCatalogue,
 } from "@/lib/quran/client";
+import { JUZ_START_PAGES } from "@/lib/quran/layout";
 
 /**
  * The reader's catalogues are fetched once on the server and handed down. Page
@@ -26,16 +27,6 @@ export default async function ReadPage() {
     />
   );
 }
-
-/**
- * The opening page of each juzʾ in the Madani Muṣḥaf. These are fixed points
- * of the printed edition rather than anything derivable from the text, so
- * they are stated outright.
- */
-const JUZ_START_PAGES = [
-  1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282, 302,
-  322, 342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
-] as const;
 
 function juzStartPages(): { id: number; page: number }[] {
   return JUZ_START_PAGES.map((page, index) => ({ id: index + 1, page }));

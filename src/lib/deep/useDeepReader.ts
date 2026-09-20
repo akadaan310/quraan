@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePageLayers, prefetchLayers } from "./usePageLayers";
 import { useSemanticAtlas } from "./useSemanticAtlas";
+import { useConcepts } from "./useConcepts";
 import { useLedger } from "@/lib/ledger/useLedger";
 import { useAmbience } from "@/components/celestial/CelestialCanvas";
 import { stemOf } from "./unpack";
@@ -29,6 +30,7 @@ export function useDeepReader({
 }) {
   const layers = usePageLayers(page, enabled);
   const atlas = useSemanticAtlas(enabled);
+  const concepts = useConcepts(enabled);
   const ledger = useLedger(enabled);
   const ambience = useAmbience();
 
@@ -135,6 +137,30 @@ export function useDeepReader({
     [atlas, ledger, page],
   );
 
+  /**
+   * A concept lens is opened by centroid, not by a single verse: the concept's
+   * seed verses (every verse carrying one of its roots, resolved at bake time)
+   * go into the same centroid/resonance calls the personal-resonance feature
+   * already uses, so "verses near this theme" is the real embedding space
+   * answering, not a second similarity notion invented for concepts.
+   */
+  const openConcept = useCallback(
+    async (conceptId: string) => {
+      const concept = concepts.find((c) => c.id === conceptId);
+      if (!concept) return;
+      setOverlay("constellation");
+      setLinksFor(concept.label);
+      setTracing(true);
+      ledger.record("constellation", { page, note: `concept:${conceptId}` });
+      try {
+        setLinks(await atlas.resonance(concept.verseKeys));
+      } finally {
+        setTracing(false);
+      }
+    },
+    [atlas, concepts, ledger, page],
+  );
+
   const openSymmetry = useCallback(
     (surahId: number) => {
       ambience.noteActivity();
@@ -165,6 +191,7 @@ export function useDeepReader({
   return {
     layers,
     atlas,
+    concepts,
     ledger,
     overlay,
     setOverlay,
@@ -179,6 +206,7 @@ export function useDeepReader({
     openMorphology,
     trace,
     traceRoot,
+    openConcept,
     openSymmetry,
   };
 }

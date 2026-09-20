@@ -9,6 +9,7 @@ export type PanelId =
   | "navigator"
   | "translation"
   | "bookmarks"
+  | "concepts"
   | "settings"
   | null;
 

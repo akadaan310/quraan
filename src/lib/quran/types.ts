@@ -78,6 +78,8 @@ export interface Surah {
   nameArabic: string;
   translatedName: string;
   revelationPlace: "makkah" | "madinah";
+  /** Position in the traditional chronological revelation order, 1–114. */
+  revelationOrder: number;
   versesCount: number;
   bismillahPre: boolean;
   pages: [number, number];

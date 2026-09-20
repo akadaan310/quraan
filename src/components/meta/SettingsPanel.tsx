@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { MetaPanel } from "./MetaPanel";
 import { ShieldIcon } from "./icons";
 import type { Reciter } from "@/lib/quran/types";
-import type { Constellation } from "@/lib/deep/types";
+import type { ConceptGroup, Constellation } from "@/lib/deep/types";
 
 interface TranslationOption {
   id: number;
@@ -29,6 +29,7 @@ export function SettingsPanel({
   lexicalPrism,
   tempo,
   resonance,
+  concepts,
   onForget,
   onOpenVerse,
   gloss,
@@ -50,6 +51,7 @@ export function SettingsPanel({
   /** Mean seconds per page, this reader's own tempo. */
   tempo: number;
   resonance: Constellation[];
+  concepts: ConceptGroup[];
   onForget: () => void;
   onOpenVerse: (page: number, verseKey: string) => void;
   gloss: (root: string) => string | undefined;
@@ -131,6 +133,7 @@ export function SettingsPanel({
             lexicalPrism={lexicalPrism}
             tempo={tempo}
             resonance={resonance}
+            concepts={concepts}
             onForget={onForget}
             onOpenVerse={onOpenVerse}
             gloss={gloss}
@@ -238,6 +241,7 @@ function PrivacySection({
   lexicalPrism,
   tempo,
   resonance,
+  concepts,
   onForget,
   onOpenVerse,
   gloss,
@@ -247,11 +251,33 @@ function PrivacySection({
   lexicalPrism: { root: string; count: number }[];
   tempo: number;
   resonance: Constellation[];
+  concepts: ConceptGroup[];
   onForget: () => void;
   onOpenVerse: (page: number, verseKey: string) => void;
   gloss: (root: string) => string | undefined;
 }) {
   const [confirming, setConfirming] = useState(false);
+
+  /**
+   * Which curated concepts this reader's own root lookups fall into, weighted
+   * by the same recency-weighted counts the lexical prism already shows —
+   * real ledger data matched against the real (if curated) concept roots,
+   * nothing modeled about the reader beyond that intersection.
+   */
+  const topography = useMemo(() => {
+    if (lexicalPrism.length === 0 || concepts.length === 0) return [];
+    const weightByRoot = new Map(lexicalPrism.map((e) => [e.root, e.count]));
+    const scored = concepts
+      .map((concept) => ({
+        concept,
+        score: concept.roots.reduce((sum, root) => sum + (weightByRoot.get(root) ?? 0), 0),
+      }))
+      .filter((s) => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6);
+    const max = scored[0]?.score ?? 1;
+    return scored.map((s) => ({ ...s, fraction: s.score / max }));
+  }, [lexicalPrism, concepts]);
 
   return (
     <div className="rounded-xl border border-gold-400/14 p-3.5">
@@ -288,6 +314,29 @@ function PrivacySection({
                     <span lang="ar" dir="rtl" style={{ fontFamily: '"UthmanicHafs", serif' }}>
                       {entry.root}
                     </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {topography.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[0.58rem] tracking-[0.14em] text-gold-300/40 uppercase">
+                Your thematic topography
+              </p>
+              <ul className="mt-1.5 space-y-1.5">
+                {topography.map(({ concept, fraction }) => (
+                  <li key={concept.id}>
+                    <div className="flex items-center justify-between gap-2 text-[0.68rem] text-gold-300/60">
+                      <span>{concept.label}</span>
+                    </div>
+                    <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-gold-400/8">
+                      <div
+                        className="h-full rounded-full bg-gold-400/55"
+                        style={{ width: `${Math.max(6, fraction * 100)}%` }}
+                      />
+                    </div>
                   </li>
                 ))}
               </ul>

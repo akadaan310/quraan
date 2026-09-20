@@ -13,6 +13,7 @@ import { ContextPill, type PillAction } from "@/components/meta/ContextPill";
 import { NavigatorPanel } from "@/components/meta/NavigatorPanel";
 import { TranslationPanel } from "@/components/meta/TranslationPanel";
 import { BookmarksPanel } from "@/components/meta/BookmarksPanel";
+import { ConceptsPanel } from "@/components/meta/ConceptsPanel";
 import { SettingsPanel } from "@/components/meta/SettingsPanel";
 import { MetaDock } from "@/components/meta/MetaDock";
 import {
@@ -368,6 +369,13 @@ export function MushafReader({
         }
       />
 
+      <ConceptsPanel
+        open={store.panel === "concepts"}
+        onClose={() => store.openPanel(null)}
+        concepts={deep.concepts}
+        onSelect={(conceptId) => void deep.openConcept(conceptId)}
+      />
+
       <MorphologyPanel
         word={deep.overlay === "morphology" ? (deep.focusWord?.word ?? null) : null}
         verseKey={deep.focusWord?.verseKey ?? ""}
@@ -385,6 +393,7 @@ export function MushafReader({
         links={deep.links}
         loading={deep.tracing}
         gloss={(root) => deep.atlas.gloss(root)}
+        chapters={chapterMap}
         onOpenVerse={(target) => {
           deep.setOverlay("none");
           store.goToPage(target);
@@ -423,6 +432,7 @@ export function MushafReader({
         lexicalPrism={deep.ledger.insights.lexicalPrism}
         tempo={deep.ledger.insights.tempo}
         resonance={deep.resonance}
+        concepts={deep.concepts}
         onForget={() => void deep.ledger.forget()}
         onOpenVerse={(target) => store.goToPage(target)}
         gloss={deep.atlas.gloss}

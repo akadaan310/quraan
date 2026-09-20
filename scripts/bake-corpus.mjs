@@ -21,6 +21,7 @@ import {
 import { profilePage, profileVerse } from "./lib/phonetics.mjs";
 import { analyseSymmetry, MUQATTAAT } from "./lib/symmetry.mjs";
 import { packPage } from "./lib/pack.mjs";
+import { resolveConcepts } from "./lib/concepts.mjs";
 
 const QDC = "https://api.qurancdn.com/api/qdc";
 const LAST_PAGE = 604;
@@ -164,6 +165,10 @@ for (const [surah, verses] of versesBySurah) {
   if (analysis) symmetry[surah] = { ...analysis, muqattaat: MUQATTAAT[surah] ?? null };
 }
 
+const { concepts, warnings: conceptWarnings } = resolveConcepts(index);
+for (const warning of conceptWarnings) console.warn(`      ! ${warning}`);
+console.log(`      ${concepts.length} concepts resolved`);
+
 /* ------------------------------------------------------------------ *
  * Write
  * ------------------------------------------------------------------ */
@@ -271,6 +276,7 @@ await writeFile(
 
 await writeFile(new URL("symmetry.json", OUT), JSON.stringify(symmetry));
 await writeFile(new URL("page-verses.json", OUT), JSON.stringify(pageVerses));
+await writeFile(new URL("concepts.json", OUT), JSON.stringify(concepts));
 
 const strengths = Object.values(symmetry).reduce((acc, s) => {
   acc[s.strength] = (acc[s.strength] ?? 0) + 1;

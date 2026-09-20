@@ -68,6 +68,20 @@ export interface Constellation {
   sharedRoots: string[];
 }
 
+/**
+ * A hand-curated thematic root-group (see scripts/lib/concepts.mjs). The
+ * `verseKeys` are exactly the verses carrying one of `roots` — a real
+ * measurement, not a model's guess — and are used as seeds for the semantic
+ * worker's centroid/resonance calls to find verses near the theme.
+ */
+export interface ConceptGroup {
+  id: string;
+  label: string;
+  labelArabic: string;
+  roots: string[];
+  verseKeys: string[];
+}
+
 export interface SemanticMeta {
   dimensions: number;
   scale: number;

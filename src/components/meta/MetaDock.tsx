@@ -4,6 +4,7 @@ import {
   BookmarkIcon,
   ChevronIcon,
   CompassIcon,
+  ConceptIcon,
   PauseIcon,
   PlayIcon,
   SettingsIcon,
@@ -130,6 +131,14 @@ export function MetaDock({
           active={activePanel === "bookmarks"}
         >
           <BookmarkIcon />
+        </DockButton>
+
+        <DockButton
+          label="Concepts"
+          onClick={() => onPanel("concepts")}
+          active={activePanel === "concepts"}
+        >
+          <ConceptIcon />
         </DockButton>
 
         <DockButton

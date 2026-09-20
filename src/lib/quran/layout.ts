@@ -14,6 +14,26 @@ export const FIRST_PAGE = 1;
 export const LAST_PAGE = 604;
 export const LINES_PER_PAGE = 15;
 
+/**
+ * The opening page of each juzʾ in the Madani Muṣḥaf. Fixed points of the
+ * printed edition rather than anything derivable from verse data, so they
+ * are stated outright — the one hand-maintained table in this file.
+ */
+export const JUZ_START_PAGES = [
+  1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282, 302,
+  322, 342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
+] as const;
+
+/** Which of the 30 ajzāʾ a page falls in, by its position among the starts. */
+export function juzForPage(page: number): number {
+  let juz = 1;
+  for (let i = 0; i < JUZ_START_PAGES.length; i += 1) {
+    if (JUZ_START_PAGES[i] > page) break;
+    juz = i + 1;
+  }
+  return juz;
+}
+
 /** One printed line as resolved at build time by scripts/bake-layout.mjs. */
 type BakedLine =
   | { t: "a"; n: number }

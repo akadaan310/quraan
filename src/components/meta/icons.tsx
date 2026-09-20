@@ -98,6 +98,18 @@ export const SymmetryIcon = () => (
   </svg>
 );
 
+/** Four radiating points around a core — a concept and its associations. */
+export const ConceptIcon = () => (
+  <svg {...base} aria-hidden="true">
+    <circle cx="12" cy="12" r="2.2" />
+    <path d="M12 3.5v3.4M12 17.1v3.4M20.5 12h-3.4M6.9 12H3.5" opacity=".75" />
+    <circle cx="12" cy="4.2" r="1.1" />
+    <circle cx="12" cy="19.8" r="1.1" />
+    <circle cx="19.8" cy="12" r="1.1" />
+    <circle cx="4.2" cy="12" r="1.1" />
+  </svg>
+);
+
 export const ShieldIcon = () => (
   <svg {...base} aria-hidden="true">
     <path d="M12 3.2 5 6v5.6c0 4 2.9 7.5 7 9.2 4.1-1.7 7-5.2 7-9.2V6l-7-2.8Z" />
