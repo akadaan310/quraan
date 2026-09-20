@@ -83,12 +83,6 @@ export interface Surah {
   pages: [number, number];
 }
 
-export interface JuzRef {
-  id: number;
-  firstVerseKey: string;
-  startPage: number;
-}
-
 export interface TranslationLine {
   verseKey: string;
   text: string;

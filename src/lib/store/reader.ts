@@ -62,7 +62,6 @@ interface ReaderState {
   /** Multiplier on the computed glyph size, 0.85–1.3. */
   glyphScale: number;
   ambience: boolean;
-  showTranslation: boolean;
   unicodeMode: boolean;
   setPreference: <K extends keyof ReaderPreferences>(
     key: K,
@@ -81,7 +80,6 @@ type ReaderPreferences = Pick<
   | "reciterId"
   | "glyphScale"
   | "ambience"
-  | "showTranslation"
   | "unicodeMode"
 >;
 
@@ -127,8 +125,7 @@ export const useReader = create<ReaderState>()(
       reciterId: DEFAULT_RECITER,
       glyphScale: 1,
       ambience: true,
-      showTranslation: false,
-      unicodeMode: false,
+          unicodeMode: false,
       setPreference: (key, value) => set({ [key]: value } as never),
 
       bookmarks: [],
@@ -160,7 +157,6 @@ export const useReader = create<ReaderState>()(
         reciterId: s.reciterId,
         glyphScale: s.glyphScale,
         ambience: s.ambience,
-        showTranslation: s.showTranslation,
         unicodeMode: s.unicodeMode,
         bookmarks: s.bookmarks,
       }),

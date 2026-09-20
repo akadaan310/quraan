@@ -184,23 +184,6 @@ export async function fetchChapters(): Promise<Surah[]> {
   }));
 }
 
-export async function fetchJuzs(): Promise<
-  { id: number; firstVerseKey: string }[]
-> {
-  const body = await get<{
-    juzs: { id: number; juz_number: number; first_verse_id: number; verse_mapping: Record<string, string> }[];
-  }>("/juzs", IMMUTABLE);
-
-  // `verse_mapping` is `{ "2": "142-252", ... }`; the first entry is the start.
-  return body.juzs
-    .map((j) => {
-      const [surah, range] = Object.entries(j.verse_mapping)[0] ?? ["1", "1-7"];
-      return { id: j.juz_number, firstVerseKey: `${surah}:${range.split("-")[0]}` };
-    })
-    .filter((j, i, all) => all.findIndex((x) => x.id === j.id) === i)
-    .sort((a, b) => a.id - b.id);
-}
-
 export async function fetchTranslationsCatalogue(): Promise<
   { id: number; name: string; authorName: string; languageName: string }[]
 > {

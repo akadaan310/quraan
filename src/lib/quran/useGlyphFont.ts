@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { glyphFontFamily, glyphFontUrl } from "./fonts";
-import { padPage } from "./layout";
 
 /**
  * Load the QCF glyph font for one printed page.
@@ -123,9 +122,4 @@ export function useSurahNameFont(): boolean {
     };
   }, []);
   return ready;
-}
-
-/** Stable DOM id fragment for a page, e.g. `mushaf-page-007`. */
-export function pageDomId(page: number): string {
-  return `mushaf-page-${padPage(page)}`;
 }

@@ -21,17 +21,6 @@ export function glyphFontUrl(page: number): string {
 }
 
 /**
- * `font-display: block` is deliberate. Any swap period would flash private-use
- * codepoints through a fallback family, which renders as unrelated Arabic —
- * far worse than a brief blank line.
- */
-export function glyphFontFace(page: number): string {
-  return `@font-face{font-family:"${glyphFontFamily(page)}";src:url("${glyphFontUrl(
-    page,
-  )}") format("woff2");font-display:block;font-weight:normal;font-style:normal;}`;
-}
-
-/**
  * The sūrah-name font resolves a zero-padded chapter number through `liga`
  * substitutions, so `"002"` paints the calligraphic title of al-Baqarah.
  */
