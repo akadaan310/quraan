@@ -41,6 +41,7 @@ export function SymmetryLens({
   symmetry,
   onOpenVerse,
   onClose,
+  onOpenAtlas,
   verseToPage,
 }: {
   open: boolean;
@@ -49,6 +50,7 @@ export function SymmetryLens({
   symmetry: SurahSymmetry | null;
   onOpenVerse: (page: number, verseKey: string) => void;
   onClose: () => void;
+  onOpenAtlas: () => void;
   verseToPage: (verseKey: string) => number;
 }) {
   return (
@@ -77,16 +79,25 @@ export function SymmetryLens({
                 {surahName} · sūrah {surahId}
               </h2>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close symmetry lens"
-              className="grid size-9 shrink-0 place-items-center rounded-lg text-gold-200/65 hover:bg-gold-400/12 hover:text-gold-100"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <path d="m6 6 12 12M18 6 6 18" />
-              </svg>
-            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={onOpenAtlas}
+                className="rounded-lg px-2 py-1.5 text-[0.62rem] tracking-[0.1em] text-gold-300/55 uppercase transition-colors hover:bg-gold-400/12 hover:text-gold-100"
+              >
+                Zoom out
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close symmetry lens"
+                className="grid size-9 shrink-0 place-items-center rounded-lg text-gold-200/65 hover:bg-gold-400/12 hover:text-gold-100"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="m6 6 12 12M18 6 6 18" />
+                </svg>
+              </button>
+            </div>
           </header>
 
           {!symmetry ? (
@@ -175,6 +186,9 @@ function Fold({
       {rungs.map((pair) => (
         <li key={`${pair.opening}-${pair.closing}`} className="glass px-3.5 py-2.5">
           <div className="flex items-center gap-2">
+            <span className="w-4 shrink-0 text-center text-[0.62rem] text-gold-300/40">
+              {ringLabel(pair.depth)}
+            </span>
             <VerseChip
               verseKey={pair.opening}
               onOpen={() => onOpenVerse(verseToPage(pair.opening), pair.opening)}
@@ -204,6 +218,9 @@ function Fold({
               verseKey={pair.closing}
               onOpen={() => onOpenVerse(verseToPage(pair.closing), pair.closing)}
             />
+            <span className="w-6 shrink-0 text-[0.62rem] text-gold-300/40">
+              {ringLabel(pair.depth)}′
+            </span>
           </div>
           {pair.shared.length > 0 && (
             <p
@@ -232,6 +249,11 @@ function Fold({
       </li>
     </ol>
   );
+}
+
+/** A↔A′, B↔B′… — the chiastic ring a pair sits on, outermost first. */
+function ringLabel(depth: number): string {
+  return depth <= 26 ? String.fromCharCode(64 + depth) : String(depth);
 }
 
 function VerseChip({ verseKey, onOpen }: { verseKey: string; onOpen: () => void }) {

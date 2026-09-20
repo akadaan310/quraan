@@ -140,6 +140,19 @@ body {
   text-shadow: 0 0 26px rgb(245 224 168 / 0.75);
 }
 
+/* A rubʿ al-ḥizb boundary — absolutely positioned so the ornament can never
+   widen the word it sits on, which would disturb the line's justification. */
+.mushaf-word[data-rub-start="true"]::before {
+  content: "\06DE";
+  position: absolute;
+  top: -0.62em;
+  right: 50%;
+  transform: translateX(50%);
+  font-size: 0.42em;
+  color: rgb(212 172 78 / 0.5);
+  pointer-events: none;
+}
+
 .surah-name-glyph {
   font-family: "sura_names", serif;
   font-feature-settings: "liga" 1;

@@ -22,6 +22,7 @@ import { profilePage, profileVerse } from "./lib/phonetics.mjs";
 import { analyseSymmetry, MUQATTAAT } from "./lib/symmetry.mjs";
 import { packPage } from "./lib/pack.mjs";
 import { resolveConcepts } from "./lib/concepts.mjs";
+import { buildJuzBalance, buildSymmetryAnomalies } from "./lib/structure.mjs";
 
 const QDC = "https://api.qurancdn.com/api/qdc";
 const LAST_PAGE = 604;
@@ -169,6 +170,9 @@ const { concepts, warnings: conceptWarnings } = resolveConcepts(index);
 for (const warning of conceptWarnings) console.warn(`      ! ${warning}`);
 console.log(`      ${concepts.length} concepts resolved`);
 
+const juzBalance = buildJuzBalance(pageVerses, morphology);
+const symmetryAnomalies = buildSymmetryAnomalies(symmetry);
+
 /* ------------------------------------------------------------------ *
  * Write
  * ------------------------------------------------------------------ */
@@ -277,6 +281,10 @@ await writeFile(
 await writeFile(new URL("symmetry.json", OUT), JSON.stringify(symmetry));
 await writeFile(new URL("page-verses.json", OUT), JSON.stringify(pageVerses));
 await writeFile(new URL("concepts.json", OUT), JSON.stringify(concepts));
+await writeFile(
+  new URL("structure.json", OUT),
+  JSON.stringify({ juz: juzBalance, anomalies: symmetryAnomalies }),
+);
 
 const strengths = Object.values(symmetry).reduce((acc, s) => {
   acc[s.strength] = (acc[s.strength] ?? 0) + 1;

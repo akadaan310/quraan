@@ -9,6 +9,7 @@ import { useAmbience } from "@/components/celestial/CelestialCanvas";
 import { MorphologyPanel } from "@/components/deep/MorphologyPanel";
 import { ConstellationView } from "@/components/deep/ConstellationView";
 import { SymmetryLens } from "@/components/deep/SymmetryLens";
+import { StructureAtlas } from "@/components/deep/StructureAtlas";
 import { ContextPill, type PillAction } from "@/components/meta/ContextPill";
 import { NavigatorPanel } from "@/components/meta/NavigatorPanel";
 import { TranslationPanel } from "@/components/meta/TranslationPanel";
@@ -27,6 +28,7 @@ import {
 } from "@/components/meta/icons";
 import { useDeepReader } from "@/lib/deep/useDeepReader";
 import { useAutoHideChrome, useSwipeNavigation } from "@/lib/utils/useSwipeNavigation";
+import { usePinchFold } from "@/lib/utils/usePinchFold";
 import {
   useGlyphFont,
   usePrefetchAdjacentFonts,
@@ -156,6 +158,14 @@ export function MushafReader({
     canGoPrevious: page.pageNumber > 1,
     enabled: store.panel === null && deep.overlay === "none",
   });
+
+  // A pinch is the fold: it opens the symmetry lens for the sūrah the
+  // reader is on, isolated from the swipe gesture above (see usePinchFold).
+  usePinchFold(
+    frameRef,
+    () => deep.openSymmetry(deep.currentSurah),
+    store.panel === null && deep.overlay === "none",
+  );
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -417,6 +427,26 @@ export function MushafReader({
           chapterMap.get(Number(verseKey.split(":")[0]))?.pages[0] ?? page.pageNumber
         }
         onOpenVerse={(target) => {
+          deep.setOverlay("none");
+          store.goToPage(target);
+        }}
+        onClose={() => deep.setOverlay("none")}
+        onOpenAtlas={() => deep.openAtlas()}
+      />
+
+      <StructureAtlas
+        open={deep.overlay === "atlas"}
+        data={deep.structureAtlas}
+        symmetry={deep.layers.symmetry}
+        chapters={chapterMap}
+        verseToPage={(verseKey) =>
+          chapterMap.get(Number(verseKey.split(":")[0]))?.pages[0] ?? page.pageNumber
+        }
+        onOpenVerse={(target) => {
+          deep.setOverlay("none");
+          store.goToPage(target);
+        }}
+        onOpenPage={(target) => {
           deep.setOverlay("none");
           store.goToPage(target);
         }}

@@ -12,6 +12,8 @@ interface Props {
   activeVerseKey: string | null;
   playingVerseKey: string | null;
   playingWordPosition: number | null;
+  /** Verse keys at which a new rubʿ al-ḥizb begins. */
+  rubStartVerses: Set<string>;
   onWordActivate: (word: MushafWord, element: HTMLElement) => void;
 }
 
@@ -32,6 +34,7 @@ function MushafLineViewImpl({
   activeVerseKey,
   playingVerseKey,
   playingWordPosition,
+  rubStartVerses,
   onWordActivate,
 }: Props) {
   const useGlyphs = fontReady && !unicodeMode;
@@ -70,6 +73,9 @@ function MushafLineViewImpl({
             data-active-word={
               (isPlayingVerse && word.position === playingWordPosition) ||
               undefined
+            }
+            data-rub-start={
+              (word.position === 1 && rubStartVerses.has(word.verseKey)) || undefined
             }
             role={word.charType === "end" ? undefined : "button"}
             tabIndex={word.charType === "end" ? undefined : -1}

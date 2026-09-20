@@ -50,6 +50,16 @@ export function MushafPageView({
     [page.verses],
   );
 
+  /**
+   * Where a new rubʿ al-ḥizb begins on this page — real, already-sourced
+   * data (`rub_el_hizb_number` from the verse payload, resolved in
+   * layout.ts) that had never been rendered anywhere before this.
+   */
+  const rubStartVerses = useMemo(
+    () => new Set(page.rubMarkers.map((m) => m.verseKey)),
+    [page.rubMarkers],
+  );
+
   return (
     <div className="flex h-full w-full flex-col">
       <h2 className="sr-only-text">
@@ -98,6 +108,7 @@ export function MushafPageView({
                 activeVerseKey={activeVerseKey}
                 playingVerseKey={playingVerseKey}
                 playingWordPosition={playingWordPosition}
+                rubStartVerses={rubStartVerses}
                 onWordActivate={onWordActivate}
               />
             </div>

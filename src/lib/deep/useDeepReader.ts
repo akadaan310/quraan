@@ -4,12 +4,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePageLayers, prefetchLayers } from "./usePageLayers";
 import { useSemanticAtlas } from "./useSemanticAtlas";
 import { useConcepts } from "./useConcepts";
+import { useStructureAtlas } from "./useStructureAtlas";
 import { useLedger } from "@/lib/ledger/useLedger";
 import { useAmbience } from "@/components/celestial/CelestialCanvas";
 import { stemOf } from "./unpack";
 import type { Constellation, MushafPageLike, WordMorphology } from "./types";
 
-export type DeepOverlay = "none" | "morphology" | "constellation" | "symmetry" | "prism";
+export type DeepOverlay =
+  | "none"
+  | "morphology"
+  | "constellation"
+  | "symmetry"
+  | "prism"
+  | "atlas";
 
 /**
  * Everything the deep layers need to follow the reader around.
@@ -31,6 +38,7 @@ export function useDeepReader({
   const layers = usePageLayers(page, enabled);
   const atlas = useSemanticAtlas(enabled);
   const concepts = useConcepts(enabled);
+  const structureAtlas = useStructureAtlas(enabled);
   const ledger = useLedger(enabled);
   const ambience = useAmbience();
 
@@ -170,6 +178,12 @@ export function useDeepReader({
     [ambience, ledger, page],
   );
 
+  const openAtlas = useCallback(() => {
+    ambience.noteActivity();
+    ledger.record("reflection", { page, note: "atlas" });
+    setOverlay("atlas");
+  }, [ambience, ledger, page]);
+
   /* -- Personal resonance ------------------------------------------------ */
   const [resonance, setResonance] = useState<Constellation[]>([]);
   const resonanceKey = ledger.insights.attentionSet.join(",");
@@ -192,6 +206,7 @@ export function useDeepReader({
     layers,
     atlas,
     concepts,
+    structureAtlas,
     ledger,
     overlay,
     setOverlay,
@@ -208,6 +223,7 @@ export function useDeepReader({
     traceRoot,
     openConcept,
     openSymmetry,
+    openAtlas,
   };
 }
 

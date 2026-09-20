@@ -68,6 +68,28 @@ export interface Constellation {
   sharedRoots: string[];
 }
 
+export interface JuzBalance {
+  juz: number;
+  pages: [number, number];
+  verseCount: number;
+  wordCount: number;
+}
+
+export interface SymmetryAnomaly {
+  peakDepth: number;
+  peakOpening: string;
+  peakClosing: string;
+  peakScore: number;
+  strength: SurahSymmetry["strength"];
+  isAnomaly: boolean;
+}
+
+export interface StructureAtlasData {
+  juz: JuzBalance[];
+  /** Keyed by sūrah id as a string, matching symmetry.json's own keying. */
+  anomalies: Record<string, SymmetryAnomaly>;
+}
+
 /**
  * A hand-curated thematic root-group (see scripts/lib/concepts.mjs). The
  * `verseKeys` are exactly the verses carrying one of `roots` — a real
